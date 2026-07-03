@@ -1,59 +1,62 @@
 package com.example.auth_service.controller;
 
-import java.util.Map;
-
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import com.example.auth_service.dto.ApiResponse;
 import com.example.auth_service.dto.LoginRequest;
 import com.example.auth_service.dto.RegisterRequest;
+import com.example.auth_service.service.JwtService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    // 1. API Đăng ký tài khoản (Mock thông báo thành công)
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtService jwtService;
+
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<String>> register(@RequestBody RegisterRequest request) {
+        String hashedPassword = passwordEncoder.encode(request.getPassword());
+        
+        // Log ra terminal để kiểm tra chuỗi mật khẩu băm trông như thế nào
+        System.out.println("Mật khẩu băm BCrypt sẽ lưu xuống DB: " + hashedPassword); 
+
         ApiResponse<String> response = ApiResponse.<String>builder()
                 .status(HttpStatus.OK.value())
-                .message("Đăng ký tài khoản cho " + request.getEmail() + " thành công!")
-                .data("User_ID_Mock_12345")
+                .message("Đăng ký tài khoản thành công!")
+                .data("User_ID_Cục_Bộ")
                 .build();
         return ResponseEntity.ok(response);
     }
 
-    // 2. API Đăng nhập (Mock kiểm tra đúng pass -> trả về token giả)
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<Map<String, String>>> login(@RequestBody LoginRequest request) {
-        // Giả lập kiểm tra tài khoản
+        // Giả lập kiểm tra logic tài khoản chuẩn (admin@gmail.com / mật khẩu: 123)
         if ("admin@gmail.com".equals(request.getEmail()) && "123".equals(request.getPassword())) {
+            String token = jwtService.generateToken(request.getEmail());
             
             Map<String, String> loginData = Map.of(
-                "token", "mocked-jwt-token-xyz-for-clothe-shop-project",
+                "token", token,
                 "role", "ADMIN",
                 "email", request.getEmail()
             );
 
-            ApiResponse<Map<String, String>> response = ApiResponse.<Map<String, String>>builder()
+            return ResponseEntity.ok(ApiResponse.<Map<String, String>>builder()
                     .status(HttpStatus.OK.value())
-                    .message("Đăng nhập thành công")
-                    .data(loginData)
-                    .build();
-            return ResponseEntity.ok(response);
+                    .message("Đăng nhập thành công với JWT thật")
+                    .data(loginData).build());
         }
 
-        // Trường hợp sai tài khoản/mật khẩu
-        ApiResponse<Map<String, String>> errorResponse = ApiResponse.<Map<String, String>>builder()
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.<Map<String, String>>builder()
                 .status(HttpStatus.UNAUTHORIZED.value())
-                .message("Email hoặc mật khẩu không chính xác!")
-                .data(null)
-                .build();
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+                .message("Tài khoản hoặc mật khẩu không chính xác!")
+                .data(null).build());
     }
 }
