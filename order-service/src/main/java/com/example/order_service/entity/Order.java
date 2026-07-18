@@ -18,6 +18,8 @@ public class Order {
     private Long userId;
     private Double totalPrice;
     private String status; // PENDING, DELIVERED, CANCELED
+    private String discountCode;
+    private Double discountAmount;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<OrderItem> items;

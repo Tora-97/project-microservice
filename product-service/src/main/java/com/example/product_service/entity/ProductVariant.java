@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
+import org.hibernate.annotations.Nationalized;
+
 @Entity
 @Table(name = "product_variants")
 @Data
@@ -19,6 +21,7 @@ public class ProductVariant {
     @Column(nullable = false, length = 50)
     private String size;  // Ví dụ: S, M, L, XL, XXL
     
+    @Nationalized
     @Column(nullable = false, length = 50)
     private String color; // Ví dụ: Đen, Trắng, Xanh Navy
     
